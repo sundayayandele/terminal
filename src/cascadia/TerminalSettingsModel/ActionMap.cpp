@@ -135,6 +135,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    {
+        if (!_KeyBindingMapCache)
+        {
+            // populate _KeyBindingMapCache
+            std::unordered_map<KeyChord, Model::Command> keyBindingsMap{};
+            _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap);
+
+            _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
+        }
+        return _KeyBindingMapCache.GetView();
+    }
+
+    // Method Description:
+    // - Populates the provided keyBindingsMap with all of our actions and our parents actions
+    //    while omitting the key bindings that were already added before.
+    // - This needs to be a bottom up approach to ensure that we only add each key chord once.
+    // Arguments:
+    // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command>& keyBindingsMap) const
+    {
+        // Update KeyBindingsMap with our current layer
+        for (const auto& [_, cmd] : _ActionMap)
+        {
+            // iterate over all of the commands' bound keys
+            const auto cmdImpl{ get_self<Command>(cmd) };
+            for (const auto& keys : cmdImpl->KeyMappings())
+            {
+                // Only populate KeyBindingsMap with actions that haven't been visited already.
+                if (keyBindingsMap.find(keys) == keyBindingsMap.end())
+                {
+                    keyBindingsMap.insert({ keys, cmd });
+                }
+            }
+        }
+
+        // Update KeyBindingsMap and visitedKeyChords with our parents
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap);
+        }
+    }
+
     com_ptr<ActionMap> ActionMap::Copy() const
     {
         auto actionMap{ make_self<ActionMap>() };
@@ -176,6 +219,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return;
         }
+
+        // Reset the caches because they are no longer valid
+        _NameMapCache = nullptr;
+        _KeyBindingMapCache = nullptr;
 
         // Handle nested commands
         const auto cmdImpl{ get_self<Command>(cmd) };
@@ -366,5 +413,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This key binding does not exist
         return nullptr;
+    }
+
+    void ActionMap::RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys)
+    {
+        const auto& cmd{ GetActionByKeyChord(oldKeys) };
+        if (!cmd)
+        {
+            // oldKeys must be bound. Otherwise, we don't know what action to bind.
+            throw hresult_invalid_argument();
+        }
+
+        if (newKeys)
+        {
+            // Bind newKeys
+            const auto newCmd{ make_self<Command>() };
+            newCmd->ActionAndArgs(cmd.ActionAndArgs());
+            newCmd->RegisterKey(newKeys);
+            AddAction(*newCmd);
+        }
+
+        // unbind oldKeys
+        DeleteKeyBinding(oldKeys);
+    }
+
+    void ActionMap::DeleteKeyBinding(KeyChord const& keys)
+    {
+        // create an "unbound" command
+        // { "command": "unbound", "keys": <keys> }
+        const auto cmd{ make_self<Command>() };
+        cmd->ActionAndArgs(make<ActionAndArgs>());
+        cmd->RegisterKey(keys);
+        AddAction(*cmd);
     }
 }
