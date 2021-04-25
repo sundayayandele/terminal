@@ -11,6 +11,12 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Control.KeyChord NewKeys { get; };
     }
 
+    runtimeclass ActionAndArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        Microsoft.Terminal.Settings.Model.ActionAndArgs ActionData { get; };
+    }
+
     runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         // Settings Model side
@@ -21,6 +27,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean IsInEditMode { get; };
         String ProposedKeys;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
+        IObservableVector<ActionAndArgsViewModel> AvailableActions { get; };
+        ActionAndArgsViewModel CurrentAction;
         void ToggleEditMode();
         void AttemptAcceptChanges();
         void DeleteKeyBinding();

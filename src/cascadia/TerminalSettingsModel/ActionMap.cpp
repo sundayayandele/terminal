@@ -3,8 +3,25 @@
 
 #include "pch.h"
 #include "ActionMap.h"
+#include "AllShortcutActions.h"
 
 #include "ActionMap.g.cpp"
+
+//
+#define REGISTER_MISSING_ACTION(shortcutAction, list, visited)            \
+    const auto actionAndArgs{ make_self<ActionAndArgs>(shortcutAction) }; \
+    if (actionAndArgs->Action() != ShortcutAction::Invalid)               \
+    {                                                                     \
+        /*We have a valid action.*/                                       \
+        /*Check if the action was already added.*/                        \
+        if (visited.find(ActionHash{}(*actionAndArgs)) == visited.end())  \
+        {                                                                 \
+            /*This is an action that wasn't added!*/                      \
+            /*Let's add it.*/                                             \
+            const auto name{ actionAndArgs->GenerateName() };             \
+            list.insert({ name, *actionAndArgs });                        \
+        }                                                                 \
+    }
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -46,6 +63,72 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return !cmd.HasNestedCommands() && cmd.ActionAndArgs().Action() == ShortcutAction::Invalid ?
                        nullptr : // explicitly unbound
                        cmd;
+        }
+    }
+
+    static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::set<InternalActionID>& visited)
+    {
+        const auto actionAndArgs{ make_self<ActionAndArgs>(shortcutAction) };
+        if (actionAndArgs->Action() != ShortcutAction::Invalid)
+        {
+            /*We have a valid action.*/
+            /*Check if the action was already added.*/
+            if (visited.find(ActionHash{}(*actionAndArgs)) == visited.end())
+            {
+                /*This is an action that wasn't added!*/
+                /*Let's add it.*/
+                const auto name{ actionAndArgs->GenerateName() };
+                list.insert({ name, *actionAndArgs });
+            }
+        }
+    }
+
+    // Method Description:
+    // - Retrieves a map of actions that can be bound to a key
+    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    {
+        if (!_AvailableActionsCache)
+        {
+            // populate _AvailableActionsCache
+            std::unordered_map<hstring, Model::ActionAndArgs> availableActions{};
+            std::set<InternalActionID> visitedActionIDs{ ActionHash()(make<implementation::ActionAndArgs>()) };
+            _PopulateAvailableActionsWithStandardCommands(availableActions, visitedActionIDs);
+
+// now add any ShortcutActions that we might have missed
+#define ON_ALL_ACTIONS(action) RegisterShortcutAction(ShortcutAction::action, availableActions, visitedActionIDs);
+            ALL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
+
+            _AvailableActionsCache = single_threaded_map<hstring, Model::ActionAndArgs>(std::move(availableActions));
+        }
+        return _AvailableActionsCache.GetView();
+    }
+
+    void ActionMap::_PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::set<InternalActionID>& visitedActionIDs) const
+    {
+        // Update AvailableActions and visitedActionIDs with our current layer
+        for (const auto& [actionID, cmd] : _ActionMap)
+        {
+            // Only populate AvailableActions with actions that haven't been visited already.
+            if (visitedActionIDs.find(actionID) == visitedActionIDs.end())
+            {
+                const auto& name{ cmd.Name() };
+                if (!name.empty())
+                {
+                    // Update AvailableActions.
+                    const auto actionAndArgsImpl{ get_self<ActionAndArgs>(cmd.ActionAndArgs()) };
+                    availableActions.insert_or_assign(name, *actionAndArgsImpl->Copy());
+                }
+
+                // Record that we already handled adding this action to the NameMap.
+                visitedActionIDs.insert(actionID);
+            }
+        }
+
+        // Update NameMap and visitedActionIDs with our parents
+        for (const auto& parent : _parents)
+        {
+            parent->_PopulateAvailableActionsWithStandardCommands(availableActions, visitedActionIDs);
         }
     }
 

@@ -7,6 +7,7 @@
 #include "KeyBindingViewModel.g.cpp"
 #include "ActionsPageNavigationState.g.cpp"
 #include "LibraryResources.h"
+#include "../TerminalSettingsModel/AllShortcutActions.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -20,11 +21,22 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const Command& cmd) :
+    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const Command& cmd, const Windows::Foundation::Collections::IObservableVector<Editor::ActionAndArgsViewModel>& availableActions) :
         _Keys{ keys },
         _KeyChordText{ Model::KeyChordSerialization::ToString(keys) },
-        _Command{ cmd }
+        _Command{ cmd },
+        _AvailableActions{availableActions}
     {
+        // Find the current action in the list of available actions
+        for (const auto& actionAndArgsVM : _AvailableActions)
+        {
+            if (actionAndArgsVM.Name() == cmd.Name())
+            {
+                _CurrentAction = actionAndArgsVM;
+                break;
+            }
+        }
+
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
         //  unique view model members.
@@ -53,6 +65,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyBindingViewModel::AttemptAcceptChanges()
     {
+        // TODO CARLOS: Apply changes to selecting a new command
+
+
+        // Key Chord Text
         auto args{ make_self<RebindKeysEventArgs>(_Keys, _Keys) };
         try
         {
@@ -81,13 +97,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
+        // Populate AvailableActionAndArgs
+        std::vector<Editor::ActionAndArgsViewModel> availableActionAndArgs;
+        for(const auto& [name, actionAndArgs] : _State.Settings().ActionMap().AvailableActions())
+        {
+            availableActionAndArgs.push_back(make<ActionAndArgsViewModel>(name, actionAndArgs));
+        }
+        std::sort(begin(availableActionAndArgs), end(availableActionAndArgs), ActionAndArgsViewModelComparator{});
+        _AvailableActionAndArgs = single_threaded_observable_vector(std::move(availableActionAndArgs));
+
         // Convert the key bindings from our settings into a view model representation
         const auto& keyBindingMap{ _State.Settings().ActionMap().KeyBindings() };
         std::vector<Editor::KeyBindingViewModel> keyBindingList;
         keyBindingList.reserve(keyBindingMap.Size());
         for (const auto& [keys, cmd] : keyBindingMap)
         {
-            const auto& container{ make<KeyBindingViewModel>(keys, cmd) };
+            const auto& container{ make<KeyBindingViewModel>(keys, cmd, _AvailableActionAndArgs) };
             container.PropertyChanged({ this, &Actions::_ViewModelPropertyChangedHandler });
             container.DeleteKeyBindingRequested({ this, &Actions::_ViewModelDeleteKeyBindingHandler });
             container.RebindKeysRequested({ this, &Actions::_ViewModelRebindKeysHandler });

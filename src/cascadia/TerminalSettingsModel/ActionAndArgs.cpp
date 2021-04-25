@@ -166,6 +166,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::Invalid, nullptr },
     };
 
+    ActionAndArgs::ActionAndArgs(ShortcutAction action)
+    {
+        // Find the deserializer
+        const auto deserializersIter = argParsers.find(action);
+        if (deserializersIter != argParsers.end())
+        {
+            auto pfn = deserializersIter->second;
+            if (pfn)
+            {
+                // Call the deserializer on an empty JSON object.
+                // This ensures that we have a valid ActionArgs
+                std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+                std::tie(_Args, parseWarnings) = pfn({});
+            }
+
+            // if an arg parser was registered, but failed,
+            // return the invalid ActionAndArgs we started with.
+            if (pfn && _Args == nullptr)
+            {
+                return;
+            }
+        }
+
+        // Either...
+        // (1) we don't have a deserializer, so it's ok for _Args to be null, or
+        // (2) we had one AND it worked, so _Args is set up properly
+        _Action = action;
+    }
+
     // Function Description:
     // - Attempts to match a string to a ShortcutAction. If there's no match, then
     //   returns ShortcutAction::Invalid
@@ -271,6 +300,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         copy->_Action = _Action;
         copy->_Args = _Args ? _Args.Copy() : IActionArgs{ nullptr };
         return copy;
+    }
+
+    Model::ActionAndArgs ActionAndArgs::Duplicate() const
+    {
+        return *Copy();
     }
 
     winrt::hstring ActionAndArgs::GenerateName() const

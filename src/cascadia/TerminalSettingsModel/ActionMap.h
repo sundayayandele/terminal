@@ -74,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ActionMap();
 
         // views
+        Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
         com_ptr<ActionMap> Copy() const;
@@ -97,10 +98,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<Model::Command> _GetActionByID(InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
 
+        void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithNestedCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap, std::set<InternalActionID>& visitedActionIDs) const;
         void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command>& keyBindingsMap) const;
 
+        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };

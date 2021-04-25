@@ -17,10 +17,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                       std::vector<SettingsLoadWarnings>& warnings);
 
         ActionAndArgs() = default;
+        ActionAndArgs(ShortcutAction action);
         ActionAndArgs(ShortcutAction action, IActionArgs args) :
             _Action{ action },
             _Args{ args } {};
         com_ptr<ActionAndArgs> Copy() const;
+        Model::ActionAndArgs Duplicate() const;
 
         hstring GenerateName() const;
 
