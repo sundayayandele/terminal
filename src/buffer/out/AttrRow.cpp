@@ -5,6 +5,16 @@
 #include "AttrRow.hpp"
 
 // Routine Description:
+// - constructor
+// Arguments:
+// - cchRowWidth - the length of the default text attribute
+// - attr - the default text attribute
+// Return Value:
+// - constructed object
+ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) :
+    _data(cchRowWidth, attr) {}
+
+// Routine Description:
 // - Takes an existing row of attributes, and changes the length so that it fills the NewWidth.
 //     If the new size is bigger, then the last attr is extended to fill the NewWidth.
 //     If the new size is smaller, the runs are cut off to fit.
@@ -15,12 +25,12 @@
 // - <none>, throws exceptions on failures.
 void ATTR_ROW::Resize(const size_t newWidth)
 {
-    mybase::resize(gsl::narrow<UINT>(newWidth));
+    _data.resize(gsl::narrow<UINT>(newWidth));
 }
 
 void ATTR_ROW::Reset(const TextAttribute attr)
 {
-    mybase::fill(attr);
+    _data.fill(attr);
 }
 
 // Routine Description:
@@ -33,7 +43,7 @@ void ATTR_ROW::Reset(const TextAttribute attr)
 // - will throw on error
 TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column) const
 {
-    return mybase::at(gsl::narrow<UINT>(column));
+    return _data.at(gsl::narrow<UINT>(column));
 }
 
 // Routine Description:
@@ -49,7 +59,7 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
                                         size_t* const pApplies) const
 {
     UINT applies = 0;
-    const auto attr = mybase::at(gsl::narrow<UINT>(column), applies);
+    const auto attr = _data.at(gsl::narrow<UINT>(column), applies);
     *pApplies = applies;
     return attr;
 }
@@ -80,7 +90,7 @@ std::vector<uint16_t> ATTR_ROW::GetHyperlinks()
 // - <none>
 bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
-    mybase::fill(attr, iStart);
+    _data.fill(attr, iStart);
     return true;
 }
 
@@ -94,7 +104,7 @@ bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 // - <none>
 void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept
 {
-    mybase::replace(toBeReplacedAttr, replaceWith);
+    _data.replace(toBeReplacedAttr, replaceWith);
 }
 
 // Routine Description:
@@ -117,8 +127,33 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                                                const size_t /*cBufferWidth*/)
 try
 {
-    mybase::assign(newAttrs.begin(), newAttrs.end(), gsl::narrow<UINT>(iStart));
+    _data.assign(newAttrs.begin(), newAttrs.end(), gsl::narrow<UINT>(iStart));
 
     return S_OK;
 }
 CATCH_RETURN()
+
+ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept
+{
+    return _data.begin();
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::end() const noexcept
+{
+    return _data.end();
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::cbegin() const noexcept
+{
+    return _data.cbegin();
+}
+
+ATTR_ROW::const_iterator ATTR_ROW::cend() const noexcept
+{
+    return _data.cend();
+}
+
+bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept
+{
+    return a._data == b._data;
+}
