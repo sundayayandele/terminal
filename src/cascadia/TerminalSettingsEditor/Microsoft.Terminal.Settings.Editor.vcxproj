@@ -102,6 +102,7 @@
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -208,6 +209,9 @@
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="PreviewConnection.cpp">
+      <DependentUpon>PreviewConnection.h</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
