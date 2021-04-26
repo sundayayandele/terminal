@@ -34,6 +34,7 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
+#include "HashUtils.h"
 #include "TerminalWarnings.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
@@ -43,6 +44,18 @@
 //   class that implements IActionArgs
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
+
+template<>
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
+
+template<>
+constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args)
+{
+    return gsl::narrow_cast<size_t>(args.Hash());
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -124,6 +137,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ColorScheme = _ColorScheme;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline, _StartingDirectory, _TabTitle, _TabColor, _ProfileIndex, _Profile, _SuppressApplicationTitle, _ColorScheme);
+        }
     };
 
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
@@ -164,6 +181,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_CopyFormatting = _CopyFormatting;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SingleLine, _CopyFormatting);
+        }
     };
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
@@ -197,6 +218,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<NewTabArgs>() };
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
         }
     };
 
@@ -233,6 +258,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<SwitchToTabArgs>() };
             copy->_TabIndex = _TabIndex;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabIndex);
         }
     };
 
@@ -274,6 +303,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ResizePaneArgs>() };
             copy->_ResizeDirection = _ResizeDirection;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_ResizeDirection);
         }
     };
 
@@ -319,6 +352,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_FocusDirection = _FocusDirection;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_FocusDirection);
+        }
     };
 
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
@@ -352,6 +389,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<AdjustFontSizeArgs>() };
             copy->_Delta = _Delta;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Delta);
         }
     };
 
@@ -389,6 +430,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<SendInputArgs>() };
             copy->_Input = _Input;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Input);
         }
     };
 
@@ -457,6 +502,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitSize = _SplitSize;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SplitStyle, _TerminalArgs, _SplitMode, _SplitSize);
+        }
     };
 
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
@@ -492,6 +541,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<OpenSettingsArgs>() };
             copy->_Target = _Target;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Target);
         }
     };
 
@@ -533,6 +586,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SchemeName = _SchemeName;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SchemeName);
+        }
     };
 
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
@@ -567,6 +624,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TabColor = _TabColor;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TabColor);
+        }
     };
 
     struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
@@ -600,6 +661,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<RenameTabArgs>() };
             copy->_Title = _Title;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Title);
         }
     };
 
@@ -641,6 +706,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Commandline = _Commandline;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Commandline);
+        }
     };
 
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
@@ -677,6 +746,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Index = _Index;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
+        }
     };
 
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
@@ -712,6 +785,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<CloseTabsAfterArgs>() };
             copy->_Index = _Index;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Index);
         }
     };
 
@@ -756,6 +833,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Direction = _Direction;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
+        }
     };
 
     struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
@@ -790,6 +871,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_RowsToScroll = _RowsToScroll;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
+        }
     };
 
     struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
@@ -823,6 +908,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ScrollDownArgs>() };
             copy->_RowsToScroll = _RowsToScroll;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_RowsToScroll);
         }
     };
 
@@ -859,6 +948,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<ToggleCommandPaletteArgs>() };
             copy->_LaunchMode = _LaunchMode;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_LaunchMode);
         }
     };
 
@@ -903,6 +996,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Direction = _Direction;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction);
+        }
     };
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
@@ -937,6 +1034,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_TerminalArgs);
+        }
     };
 
     struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
@@ -969,6 +1070,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<PrevTabArgs>() };
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
         }
     };
 
@@ -1003,6 +1108,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SwitcherMode = _SwitcherMode;
             return *copy;
         }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_SwitcherMode);
+        }
     };
 
     struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
@@ -1035,6 +1144,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<RenameWindowArgs>() };
             copy->_Name = _Name;
             return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name);
         }
     };
 }
